@@ -1,0 +1,49 @@
+uniBot — Guia rápido 
+Bem-vindo ao uniBot — um protótipo de assistente RAG que recupera informação de documentos da universidade.
+
+Visão geral (simples)
+- Backend: API em FastAPI dentro de `backend/`. Endpoints principais: `/health` e `/api/query`.
+- RAGService: código em `backend/app/ai_service.py` faz ingestão, indexação (Chroma) e busca por similaridade.
+- Frontend: app React + Vite em `frontend/` (cliente mínimo que consulta a API).
+
+O que já está funcionando
+- Ingestão de documentos (`.txt` e `.pdf`) em `backend/data/` via `backend/app/ingest.py`.
+- Indexação persistente usando ChromaDB (configure `CHROMA_DIR` para a pasta local de vetores).
+- Geração: existe um placeholder em `RAGService.generate()` — próximo passo é integrar o LLM (LangChain + Gemini).
+ - O documento `resolução_CEPE_473.pdf` (Resolução CEPE nº 473) já está em `backend/data/` e foi indexado.
+
+
+Passo a passo rápido (direto)
+
+1) Backend — execute cada linha abaixo na ordem:
+
+```bash
+cd backend
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+export CHROMA_DIR=$(pwd)/chroma_db
+CHROMA_DIR=$CHROMA_DIR python -m app.ingest
+./.venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+2) Frontend — em outra janela:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+3) Verificar (em outra janela):
+
+```bash
+curl http://127.0.0.1:8000/health
+curl -X POST http://127.0.0.1:8000/api/query -H 'Content-Type: application/json' -d '{"query":"resolução"}'
+```
+
+Nota rápida:
+- Cada dev cria seu `chroma_db` local (por isso está em `.gitignore`).
+- Se a API devolver 0 documentos: garanta que o `CHROMA_DIR` usado no `ingest` e no servidor é o mesmo e reinicie o servidor.
+
+

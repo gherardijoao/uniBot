@@ -3,3 +3,22 @@ venv/
 node_modules/
 __pycache__/
 *.pyc
+# ChromaDB persistence (local vector DB files)
+chroma_db/
+**/chroma_db/
+backend/chroma_db/
+# Chroma sqlite files
+*.sqlite3
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.*
+
+# Python testing / coverage
+.pytest_cache/
+coverage.xml
