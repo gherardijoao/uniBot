@@ -9,7 +9,7 @@ Visão geral (simples)
 O que já está funcionando
 - Ingestão de documentos (`.txt` e `.pdf`) em `backend/data/` via `backend/app/ingest.py`.
 - Indexação persistente usando ChromaDB (configure `CHROMA_DIR` para a pasta local de vetores).
-- Geração: existe um placeholder em `RAGService.generate()` — próximo passo é integrar o LLM (LangChain + Gemini).
+- Geração: `RAGService.generate()` está integrado com Gemini; defina `GOOGLE_API_KEY` para habilitar geração via LLM.
  - O documento `resolução_CEPE_473.pdf` (Resolução CEPE nº 473) já está em `backend/data/` e foi indexado.
 
 
@@ -53,7 +53,7 @@ Como configurar o Gemini (opcional)
 export GOOGLE_API_KEY="sua_chave_aqui"
 ```
 
-O `RAGService.generate()` usará essa chave para chamar a API do Gemini. Se a variável não estiver definida, o método retorna uma resposta placeholder.
+O `RAGService.generate()` usará essa chave para chamar a API do Gemini. Se a variável não estiver definida, a geração ficará desabilitada e o serviço retornará uma mensagem informativa solicitando a configuração da chave.
 
 Usando `.env` para desenvolvimento
 - Você pode copiar o exemplo para criar o arquivo real:
