@@ -1,0 +1,192 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(180deg, #050816 0%, #02040a 100%);
+  color: #e6eefc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background: inherit;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.center-stage {
+  width: 100%;
+  max-width: 840px;
+}
+
+.chat-card {
+  width: 100%;
+  background: rgba(6, 10, 22, 0.78);
+  border: 1px solid rgba(125, 155, 255, 0.12);
+  border-radius: 28px;
+  padding: 32px;
+  box-shadow:
+    0 25px 90px rgba(0, 0, 0, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+}
+
+.minimal-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8ab4ff;
+  margin-bottom: 12px;
+}
+
+.minimal-header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.minimal-header p {
+  margin: 14px auto 0;
+  max-width: 52ch;
+  color: #aebad6;
+  font-size: 0.98rem;
+  line-height: 1.7;
+}
+
+.field-label,
+.response-label {
+  display: block;
+  font-size: 0.76rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #89a3d8;
+  margin: 18px 0 10px;
+}
+
+.primary-button {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease, background 180ms ease;
+}
+
+.input-stack {
+  display: grid;
+  gap: 14px;
+}
+
+textarea {
+  width: 100%;
+  resize: none;
+  border: 1px solid rgba(125, 155, 255, 0.18);
+  border-radius: 20px;
+  background: rgba(4, 8, 18, 0.72);
+  color: #eef4ff;
+  padding: 16px 18px;
+  outline: none;
+  line-height: 1.6;
+  min-height: 140px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+textarea::placeholder {
+  color: #7184ab;
+}
+
+textarea:focus {
+  border-color: rgba(96, 165, 250, 0.55);
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.12);
+}
+
+.primary-button {
+  padding: 15px 22px;
+  min-width: 100%;
+  background: linear-gradient(135deg, #2563eb 0%, #0f172a 100%);
+  color: #f8fbff;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.25);
+}
+
+.primary-button:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.response-area {
+  margin-top: 26px;
+}
+
+.empty-state {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px dashed rgba(125, 155, 255, 0.18);
+  color: #8091b6;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.response-card {
+  padding: 20px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(8, 12, 22, 0.9));
+  border: 1px solid rgba(96, 165, 250, 0.12);
+  color: #eef4ff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.response-card p {
+  margin: 0;
+  line-height: 1.75;
+  color: #eef4ff;
+  white-space: pre-wrap;
+}
+
+.response-meta {
+  margin-top: 14px;
+  color: #8ca1c8;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 920px) {
+  .app-shell {
+    padding: 16px;
+  }
+
+  .chat-card {
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .primary-button {
+    width: 100%;
+  }
+}

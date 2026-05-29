@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { motion } from 'framer-motion'
+import './styles.css'
 
 export default function App() {
   const [query, setQuery] = useState('')
@@ -23,20 +25,65 @@ export default function App() {
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>uniBot (protótipo)</h1>
-      <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Pergunte algo" style={{ width: '60%' }} />
-      <button onClick={send} style={{ marginLeft: 8 }} disabled={loading}>{loading ? 'Enviando...' : 'Enviar'}</button>
-      <div style={{ marginTop: 20 }}>
-        {!resp && <div>Sem resposta</div>}
-        {resp && (
-          <div>
-            <h3>Resposta</h3>
-            <div style={{ whiteSpace: 'pre-wrap', background: '#f6f8fa', padding: 12, borderRadius: 6 }}>{resp.response}</div>
-            <p style={{ marginTop: 8 }}><strong>Documentos encontrados:</strong> {resp.docs_found}</p>
+    <div className="app-shell">
+      <motion.main
+        className="center-stage"
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+      >
+        <motion.section
+          className="chat-card"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
+        >
+          <div className="minimal-header">
+            <span className="eyebrow">uniBot</span>
+            <h1>Pergunte e receba a resposta</h1>
+            <p>
+              Uma interface limpa, escura e centralizada para consultar documentos da universidade.
+            </p>
           </div>
-        )}
-      </div>
+
+          <label className="field-label" htmlFor="query">
+            Sua pergunta
+          </label>
+
+          <div className="input-stack">
+            <textarea
+              id="query"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Ex.: Qual é o objetivo da Resolução CEPE 473?"
+              rows={5}
+            />
+            <button className="primary-button" onClick={send} disabled={loading} type="button">
+              {loading ? 'Gerando...' : 'Enviar'}
+            </button>
+          </div>
+
+          <div className="response-area">
+            <div className="response-label">Resposta</div>
+
+            {!resp && <div className="empty-state">Ainda não há resposta. Faça uma pergunta para começar.</div>}
+
+            {resp && (
+              <motion.div
+                className="response-card"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.25 }}
+              >
+                <p>{resp.response}</p>
+                <div className="response-meta">
+                  <span>{resp.docs_found} documento(s) consultado(s)</span>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </motion.section>
+      </motion.main>
     </div>
   )
 }
