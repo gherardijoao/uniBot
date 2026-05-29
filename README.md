@@ -46,4 +46,30 @@ Nota rápida:
 - Cada dev cria seu `chroma_db` local (por isso está em `.gitignore`).
 - Se a API devolver 0 documentos: garanta que o `CHROMA_DIR` usado no `ingest` e no servidor é o mesmo e reinicie o servidor.
 
+Como configurar o Gemini (opcional)
+- Para habilitar geração com Gemini, defina a variável de ambiente `GOOGLE_API_KEY` com sua chave de API (NÃO comite essa chave):
+
+```bash
+export GOOGLE_API_KEY="sua_chave_aqui"
+```
+
+O `RAGService.generate()` usará essa chave para chamar a API do Gemini. Se a variável não estiver definida, o método retorna uma resposta placeholder.
+
+Usando `.env` para desenvolvimento
+- Você pode copiar o exemplo para criar o arquivo real:
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+- Depois preencha `backend/.env` com as variáveis abaixo:
+
+```text
+GOOGLE_API_KEY=Sua_Chave_Gemini
+CHROMA_DIR=./chroma_db
+```
+
+O backend foi atualizado para carregar automaticamente `backend/.env` via `python-dotenv` na inicialização.
+
 

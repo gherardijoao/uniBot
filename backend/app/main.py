@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+# carregar .env automaticamente (se existir)
+from dotenv import load_dotenv
+load_dotenv()
+
 from .ai_service import RAGService
 from .mcp_tools import MCPTool
 
