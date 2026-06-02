@@ -1,11 +1,15 @@
 import { defineConfig } from 'vite'
 
-// Proxy /api requests to the backend running on port 8000 during development
+// Detectar se está em Docker ou localhost
+const API_TARGET = process.env.VITE_API_URL 
+  ? process.env.VITE_API_URL.replace('http://', 'http://').replace('https://', 'https://')
+  : 'http://localhost:8000'
+
 export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: API_TARGET,
         changeOrigin: true,
         secure: false,
       },

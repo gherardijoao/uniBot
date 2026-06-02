@@ -1,18 +1,19 @@
 import os
 import glob
+from typing import Optional
 from .ai_service import RAGService
 
 # Support for PDF extraction
 try:
-    from pypdf import PdfReader
+    from pypdf import PdfReader as PdfReaderLib
 except Exception:
-    PdfReader = None
+    PdfReaderLib = None  # type: ignore
 
 
 def extract_text_from_pdf(path: str) -> str:
-    if PdfReader is None:
+    if PdfReaderLib is None:
         raise RuntimeError("pypdf não está instalado. Instale com `pip install pypdf`")
-    reader = PdfReader(path)
+    reader = PdfReaderLib(path)
     pages = []
     for p in reader.pages:
         try:
@@ -22,7 +23,7 @@ def extract_text_from_pdf(path: str) -> str:
     return "\n".join(pages)
 
 
-def main(data_dir: str = None):
+def main(data_dir: Optional[str] = None) -> None:
     base = data_dir or os.path.join(os.path.dirname(__file__), '..', 'data')
     base = os.path.abspath(base)
     if not os.path.exists(base):

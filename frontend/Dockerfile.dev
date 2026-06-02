@@ -1,0 +1,17 @@
+# Dockerfile para desenvolvimento (Vite dev server com hot reload)
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Instalar dependências
+COPY package*.json ./
+RUN npm install
+
+# Copiar código
+COPY . .
+
+# Expor porta
+EXPOSE 5173
+
+# Iniciar Vite dev server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
