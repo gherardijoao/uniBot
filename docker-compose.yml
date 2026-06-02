@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  # Backend API (FastAPI + RAG)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: unibot-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      # Gemini (copiar de .env)
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      # Chroma DB
+      - CHROMA_DIR=/app/chroma_db
+      # SIG
+      - SIG_BASE_URL=${SIG_BASE_URL:-https://sig.ufla.fr}
+    volumes:
+      # Persistência de vetores
+      - chroma_db:/app/chroma_db
+      # Documentos para ingestão
+      - ./backend/data:/app/data
+      # .env local (se existir)
+      - ./backend/.env:/app/.env:ro
+    networks:
+      - unibot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Frontend (React + Vite + Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: unibot-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - unibot-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  chroma_db:
+    driver: local
+
+networks:
+  unibot-network:
+    driver: bridge

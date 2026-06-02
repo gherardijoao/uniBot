@@ -1,7 +1,6 @@
 import os
-from typing import List, Optional
+from typing import List, Optional, Any
 import uuid
-import os
 import json
 
 import chromadb
@@ -29,9 +28,9 @@ class RAGService:
                 # Fallback to default client (may be in-memory depending on install)
                 self.client = chromadb.Client()
             except Exception:
-                self.client = None
+                self.client = None  # type: ignore
 
-        self.collection = None
+        self.collection: Optional[Any] = None
         if self.client is not None:
             try:
                 # Prefer get_or_create_collection where available
@@ -49,6 +48,8 @@ class RAGService:
         self.embedder = SentenceTransformer(model_name)
 
     def ingest_documents(self, docs: List[str], metadatas: Optional[List[dict]] = None):
+        if self.collection is None:
+            raise RuntimeError("Collection não inicializada")
         ids = [str(uuid.uuid4()) for _ in docs]
         embeddings = self.embedder.encode(docs, show_progress_bar=False)
         # sentence-transformers retorna numpy arrays; convertemos para listas
@@ -56,9 +57,11 @@ class RAGService:
         self.collection.add(documents=docs, metadatas=(metadatas or [{} for _ in docs]), ids=ids, embeddings=embeddings)
 
     def retrieve(self, query: str, n_results: int = 3) -> List[str]:
+        if self.collection is None:
+            return []
         q_emb = self.embedder.encode([query], show_progress_bar=False)[0].tolist()
         result = self.collection.query(query_embeddings=[q_emb], n_results=n_results, include=["documents", "metadatas", "distances"])
-        docs = []
+        docs: List[str] = []
         if result and "documents" in result:
             docs = result["documents"][0]
         return docs
@@ -113,7 +116,7 @@ class RAGService:
                         parts = []
                         for p in text["parts"]:
                             if isinstance(p, dict) and isinstance(p.get("text"), str):
-                                parts.append(p.get("text"))
+                                parts.append(str(p.get("text")))
                         text = "\n".join(parts) if parts else None
                     else:
                         # procurar por campos de texto dentro do dict
@@ -127,7 +130,7 @@ class RAGService:
                 # alguns retornos contém 'candidates' -> [{'message':{'content':[...parts...]}}]
                 try:
                     # Procura recursiva por primeiras strings
-                    def find_first_str(obj):
+                    def find_first_str(obj: Any) -> Optional[str]:
                         if isinstance(obj, str):
                             return obj
                         if isinstance(obj, dict):

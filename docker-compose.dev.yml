@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  # Backend API (com reload automático)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: unibot-backend-dev
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - CHROMA_DIR=/app/chroma_db
+      - SIG_BASE_URL=${SIG_BASE_URL:-https://sig.ufla.fr}
+    volumes:
+      # Código (watch para reload)
+      - ./backend:/app
+      # Persistência
+      - chroma_db:/app/chroma_db
+      # Dados
+      - ./backend/data:/app/data
+    networks:
+      - unibot-network
+    # Para desenvolvimento: usar --reload
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+  # Frontend (com Vite dev server)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: unibot-frontend-dev
+    ports:
+      - "5173:5173"
+      - "80:80"  # Nginx proxy opcional
+    environment:
+      - VITE_API_URL=http://backend:8000
+    volumes:
+      # Código (watch para hot reload)
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    networks:
+      - unibot-network
+    # Dev: vite dev server
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+volumes:
+  chroma_db:
+    driver: local
+
+networks:
+  unibot-network:
+    driver: bridge

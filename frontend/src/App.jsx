@@ -12,6 +12,8 @@ export default function App() {
   async function send() {
     try {
       setLoading(true)
+      console.log('Enviando query para /api/query')
+      
       const r = await fetch('/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
