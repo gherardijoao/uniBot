@@ -8,7 +8,9 @@
   "dependencies": {
     "framer-motion": "^11.11.17",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "vite": "^4.0.0"

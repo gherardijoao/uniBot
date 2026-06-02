@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import './styles.css'
 
 export default function App() {
@@ -17,6 +19,12 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query })
       })
+
+      if (!r.ok) {
+        const errorText = await r.text();
+        throw new Error(`Erro ${r.status}: ${errorText || r.statusText}`);
+      }
+
       const j = await r.json()
       setResp(j)
     } catch (e) {
@@ -77,7 +85,11 @@ export default function App() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.25 }}
               >
-                <p>{resp.response}</p>
+                <div className="markdown-content">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {resp.response}
+                  </ReactMarkdown>
+                </div>
                 <div className="response-meta">
                   <span>{resp.docs_found} documento(s) consultado(s)</span>
                 </div>
