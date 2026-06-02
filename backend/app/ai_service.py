@@ -67,16 +67,44 @@ class RAGService:
         return docs
 
     def generate(self, query: str, docs: List[str], tool_result: Optional[dict] = None) -> str:
-        # Monta um prompt simples combinando documentos recuperados e resultado da ferramenta
-        docs_text = "\n\n---\n\n".join(docs) if docs else ""
-        tool_text = json.dumps(tool_result, ensure_ascii=False, indent=2) if tool_result else ""
+        # Monta um prompt mais inteligente combinando documentos e ferramentas
+        docs_text = "\n\n---\n\n".join(docs) if docs else "Nenhum documento local encontrado."
+        
+        tool_info = ""
+        if tool_result:
+            if tool_result.get("error") == "AUTH_REQUIRED":
+                tool_info = "\nAVISO DE SEGURANÇA: Esta solicitação exige autenticação. Informe ao usuário que ele precisa se identificar ou estar logado no SIG para acessar esses dados privados (como saldo ou créditos).\n"
+            elif tool_result.get("success"):
+                # Caso do RU (cardápio)
+                cardapio = tool_result.get("cardapio")
+                if cardapio:
+                    tool_info = "Cardápio do RU (Recuperado em tempo real):\n"
+                    for categoria, refeicoes in cardapio.items():
+                        tool_info += f"- {categoria}: Almoço: {refeicoes['almoco']} | Jantar: {refeicoes['jantar']}\n"
+                
+                # Caso do SIG/Dados Abertos
+                datasets = tool_result.get("datasets_encontrados", [])
+                if datasets:
+                    tool_info += "\nInformações externas (Portal de Dados Abertos UFLA):\n"
+                    for d in datasets:
+                        tool_info += f"- {d['titulo']}: {d['notas']}\n"
+                
+                if not cardapio and not datasets:
+                    tool_info = f"Resultado da ferramenta: {json.dumps(tool_result, ensure_ascii=False)}"
+
         prompt = (
-            "Você é o uniBot, um assistente que responde com base em documentos fornecidos. "
-            "Use apenas as informações dos documentos e, se necessário, os resultados da ferramenta. "
-            "Se não souber a resposta, admita que não sabe.\n\n"
-            f"Documentos:\n{docs_text}\n\n"
-            f"Resultado da ferramenta:\n{tool_text}\n\n"
-            f"Pergunta do usuário: {query}\n\nResposta:" 
+            "Você é o uniBot, o assistente inteligente da UFLA. Seu objetivo é ajudar o usuário "
+            "combinando o conhecimento de documentos internos e buscas em tempo real.\n\n"
+            "INSTRUÇÕES IMPORTANTES:\n"
+            "1. Se houver um 'AVISO DE SEGURANÇA' indicando AUTH_REQUIRED, você DEVE dizer explicitamente que não pode acessar esses dados sem que o usuário se autentique.\n"
+            "2. Use os 'Documentos Locais' para detalhes técnicos e normas específicas.\n"
+            "3. Use as 'Informações externas' para dados do portal ou cardápio do RU.\n"
+            "4. Se o usuário perguntar sobre o cardápio, informe que ele está disponível no SIG e forneça o link se disponível.\n"
+            "5. Responda de forma amigável e profissional.\n\n"
+            f"Documentos Locais:\n{docs_text}\n\n"
+            f"{tool_info}\n\n"
+            f"Pergunta do usuário: {query}\n\n"
+            "Resposta:" 
         )
 
         # Tentar usar a API do Gemini via Generative Language API se a chave estiver definida

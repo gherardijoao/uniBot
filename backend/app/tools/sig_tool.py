@@ -27,71 +27,64 @@ class SIGTool(HTTPTool):
     documentação do SIG estiver disponível.
     """
 
-    def __init__(self, base_url: str = "https://sig.ufla.br", name: str = "sig_tool"):
+    def __init__(self, base_url: str = "https://dados.ufla.br", name: str = "sig_tool"):
         """
-        Inicializa ferramenta SIG.
+        Inicializa ferramenta SIG/Dados Abertos.
 
         Args:
-            base_url: URL base do SIG (padrão: UFLA)
+            base_url: URL base (padrão: Portal de Dados Abertos UFLA)
             name: Nome da ferramenta
         """
         super().__init__(base_url=base_url, name=name)
-        self.description = "Consulta dados do SIG (Sistema Integrado de Gestão) da UFLA"
+        self.description = "Consulta dados abertos e informações públicas da UFLA"
 
-        # Endpoints conhecidos (a serem preenchidos)
+        # Endpoints configurados para a API CKAN (Dados Abertos)
         self.endpoints = {
-            "usuarios": "/api/usuarios",
-            "documentos": "/api/documentos",
-            "resolucoes": "/api/resolucoes",
-            "horarios": "/api/horarios",
-            "notas": "/api/notas",
-            "disciplinas": "/api/disciplinas",
-            "matriculas": "/api/matriculas",
+            "usuarios": "/api/3/action/package_search",
+            "documentos": "/api/3/action/package_search",
+            "resolucoes": "/api/3/action/package_search",
+            "horarios": "/api/3/action/package_search",
+            "notas": "/api/3/action/package_search",
+            "disciplinas": "/api/3/action/package_search",
+            "matriculas": "/api/3/action/package_search",
+            "datasets": "/api/3/action/package_list",
         }
 
     def call(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Chamada genérica ao SIG.
+        Chamada à API de Dados Abertos da UFLA.
 
         Args:
             params: {
-                "endpoint": "usuarios", "documentos", "resolucoes", etc,
+                "endpoint": "resolucoes", "documentos", etc,
                 "query": "termo de busca",
-                "filters": {...},
                 ...
             }
-
-        Returns:
-            Resultado da chamada ao SIG
         """
         endpoint = params.get("endpoint")
+        query_term = params.get("query", "")
 
         if not endpoint:
-            return self.format_result(
-                success=False,
-                error="Parâmetro 'endpoint' é obrigatório"
-            )
+            return self.format_result(success=False, error="Parâmetro 'endpoint' é obrigatório")
 
         if endpoint not in self.endpoints:
-            return self.format_result(
-                success=False,
-                error=f"Endpoint desconhecido: {endpoint}. Disponíveis: {list(self.endpoints.keys())}"
-            )
+            return self.format_result(success=False, error=f"Endpoint desconhecido: {endpoint}")
 
-        # Preparar URL
         url = self.endpoints[endpoint]
-
-        # Se há query, adicionar como parâmetro
         query_params = {}
-        if "query" in params:
-            query_params["q"] = params["query"]
 
+        # Lógica para API CKAN (package_search)
+        if "package_search" in url:
+            # Se for uma busca, o termo vai no parâmetro 'q'
+            # Combinamos o contexto do endpoint com a query do usuário
+            q = f"{endpoint} {query_term}".strip()
+            query_params["q"] = q
+        
         if "filters" in params:
             query_params.update(params["filters"])
 
-        logger.info(f"[{self.name}] Consultando {endpoint} com query={query_params}")
+        logger.info(f"[{self.name}] Consultando Dados Abertos ({endpoint}) com q='{query_params.get('q')}'")
 
-        # Delegar para HTTPTool
         return super().call({
             "method": "GET",
             "url": url,

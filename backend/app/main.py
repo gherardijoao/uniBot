@@ -11,7 +11,7 @@ load_dotenv()
 from . import config
 from .ai_service import RAGService
 from .mcp_tools import MCPTool
-from .tools import SIGTool, HTTPTool
+from .tools import SIGTool, HTTPTool, RUTool
 
 # Configurar logging
 dictConfig(config.LOGGING_CONFIG)
@@ -72,6 +72,14 @@ async def startup_event():
     except Exception as e:
         logger.error(f"❌ Erro ao registrar HTTPTool: {e}")
 
+    # Registrar RUTool
+    try:
+        ru_tool = RUTool()
+        mcp.register("ru", ru_tool)
+        logger.info("✅ RUTool registrada")
+    except Exception as e:
+        logger.error(f"❌ Erro ao registrar RUTool: {e}")
+
     logger.info(f"🎯 Ferramentas disponíveis: {list(mcp.list_tools().keys())}")
 
 
@@ -121,12 +129,41 @@ async def query(req: QueryRequest):
     tool_result = None
     if req.use_tools and mcp is not None:
         try:
-            # Exemplo: chamar SIG para complementar busca
-            tool_result = mcp.call("sig", {
-                "endpoint": "resolucoes",
-                "query": req.query
-            })
-            logger.info(f"🔧 Ferramenta SIG chamada: success={tool_result.get('success')}")
+            query_lower = req.query.lower()
+            
+            # Decidir qual ferramenta chamar
+            if any(word in query_lower for word in ["cardapio", "cardápio", "ru", "almoço", "jantar", "refeição", "comida", "restaurante", "saldo", "crédito"]):
+                action = "saldo" if any(word in query_lower for word in ["saldo", "crédito", "extrato"]) else "cardapio"
+                raw_result = mcp.call("ru", {"action": action})
+                tool_result = raw_result
+                logger.info(f"🔧 Ferramenta RU chamada (action={action}): success={raw_result.get('success')}")
+            else:
+                # Fallback para SIG/Dados Abertos
+                raw_result = mcp.call("sig", {
+                    "endpoint": "resolucoes",
+                    "query": req.query
+                })
+                
+                # Simplificar o resultado para o Gemini não se perder no JSON gigante do CKAN
+                if raw_result.get("success") and isinstance(raw_result.get("data"), dict):
+                    body = raw_result["data"].get("body", {})
+                    if isinstance(body, dict) and "result" in body:
+                        results = body["result"].get("results", [])
+                        # Pegar apenas títulos e notas dos primeiros 5 datasets
+                        simplified = [
+                            {"titulo": r.get("title"), "notas": r.get("notes")[:200] + "..." if r.get("notes") else ""}
+                            for r in results[:5]
+                        ]
+                        tool_result = {
+                            "success": True,
+                            "source": "Portal de Dados Abertos UFLA",
+                            "datasets_encontrados": simplified
+                        }
+                
+                if not tool_result:
+                    tool_result = raw_result
+
+                logger.info(f"🔧 Ferramenta SIG chamada: success={raw_result.get('success')}")
         except Exception as e:
             logger.error(f"⚠️  Erro ao chamar ferramenta: {e}")
             tool_result = None

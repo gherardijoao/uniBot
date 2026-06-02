@@ -30,6 +30,7 @@ export default function App() {
     } catch (e) {
       setResp({ response: 'Erro ao chamar a API: ' + String(e), docs_found: 0 })
     } finally {
+      setQuery('')
       setLoading(false)
     }
   }
@@ -51,9 +52,6 @@ export default function App() {
           <div className="minimal-header">
             <span className="eyebrow">uniBot</span>
             <h1>Pergunte e receba a resposta</h1>
-            <p>
-              Uma interface limpa, escura e centralizada para consultar documentos da universidade.
-            </p>
           </div>
 
           <label className="field-label" htmlFor="query">

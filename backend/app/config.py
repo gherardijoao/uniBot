@@ -35,20 +35,21 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 
 
 # ============================================================================
-# SIG (Sistema Integrado de Gestão) da UFLA
+# SIG (Sistema Integrado de Gestão) e Dados Públicos da UFLA
 # ============================================================================
 
-SIG_BASE_URL = os.getenv("SIG_BASE_URL", "https://sig.ufla.br")
+# Usando o Portal de Dados Abertos como fallback público (API CKAN)
+SIG_BASE_URL = os.getenv("SIG_BASE_URL", "https://dados.ufla.br")
 
-# Endpoints do SIG (usar template em sig_tool.py até ter documentação real)
+# Endpoints do CKAN para busca pública
 SIG_ENDPOINTS = {
-    "usuarios": os.getenv("SIG_USUARIOS_ENDPOINT", "/api/usuarios"),
-    "documentos": os.getenv("SIG_DOCUMENTOS_ENDPOINT", "/api/documentos"),
-    "resolucoes": os.getenv("SIG_RESOLUCOES_ENDPOINT", "/api/resolucoes"),
-    "horarios": os.getenv("SIG_HORARIOS_ENDPOINT", "/api/horarios"),
-    "notas": os.getenv("SIG_NOTAS_ENDPOINT", "/api/notas"),
-    "disciplinas": os.getenv("SIG_DISCIPLINAS_ENDPOINT", "/api/disciplinas"),
-    "matriculas": os.getenv("SIG_MATRICULAS_ENDPOINT", "/api/matriculas"),
+    "usuarios": os.getenv("SIG_USUARIOS_ENDPOINT", "/api/3/action/package_search?q=usuarios"),
+    "documentos": os.getenv("SIG_DOCUMENTOS_ENDPOINT", "/api/3/action/package_search?q=documentos"),
+    "resolucoes": os.getenv("SIG_RESOLUCOES_ENDPOINT", "/api/3/action/package_search?q=resolucoes"),
+    "horarios": os.getenv("SIG_HORARIOS_ENDPOINT", "/api/3/action/package_search?q=horarios"),
+    "notas": os.getenv("SIG_NOTAS_ENDPOINT", "/api/3/action/package_search?q=notas"),
+    "disciplinas": os.getenv("SIG_DISCIPLINAS_ENDPOINT", "/api/3/action/package_search?q=disciplinas"),
+    "matriculas": os.getenv("SIG_MATRICULAS_ENDPOINT", "/api/3/action/package_search?q=matriculas"),
 }
 
 # Autenticação SIG (se necessário)
