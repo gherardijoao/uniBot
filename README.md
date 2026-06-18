@@ -1,398 +1,333 @@
-# 🤖 uniBot — Assistente RAG com MCP integrado
+# uniBot
 
-Um **assistente de IA baseado em Retrieval-Augmented Generation (RAG)** que recupera informações de documentos da universidade e integra ferramentas externas via **Model Context Protocol (MCP)**.
+uniBot e uma aplicacao full-stack para consulta assistida a documentos institucionais com recuperacao semantica, chamadas a ferramentas externas via MCP e geracao de resposta com Gemini.
 
----
+## Visao geral
 
-## 🎯 Objetivo
+O sistema combina quatro blocos principais:
 
-Criar um sistema inteligente que:
-1. **Recupera** documentos relevantes (RAGService + ChromaDB)
-2. **Chama ferramentas** de terceiros (MCP: SIG, APIs, etc)
-3. **Gera respostas** contextualizadas com Gemini
+1. Ingestao de documentos em PDF e TXT.
+2. Indexacao vetorial em ChromaDB.
+3. Orquestracao de ferramentas MCP para SIG, HTTP generico e RU.
+4. Geracao de resposta contextualizada pela camada RAG.
 
----
+O backend expoe uma API FastAPI e o frontend fornece a interface web para consulta e exibicao das respostas.
 
-## ✨ Features
+## Arquitetura
 
-- ✅ **RAG completo**: ingestão de PDFs/TXTs → embeddings → busca por similaridade
-- ✅ **MCP Framework**: ferramentas modulares e reutilizáveis
-- ✅ **SIG Integration**: template pronto para integrar Sistema Integrado de Gestão (UFLA)
-- ✅ **Docker & Compose**: containerizado, pronto para produção
-- ✅ **Frontend React**: interface moderna com Vite
-- ✅ **Documentação completa**: 7 guias + testes
+Fluxo de processamento da requisicao:
 
----
-
-## 📦 Estrutura do Projeto
-
-```
-uniBot/
-├── backend/
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py              # API FastAPI
-│   │   ├── ai_service.py        # RAGService
-│   │   ├── mcp_tools.py         # MCPTool (registry)
-│   │   ├── config.py            # Configuração centralizada
-│   │   ├── ingest.py            # Ingestão de documentos
-│   │   ├── tools/               # Framework de ferramentas
-│   │   │   ├── __init__.py
-│   │   │   ├── base_tool.py     # Classe base abstrata
-│   │   │   ├── http_tool.py     # HTTP genérico
-│   │   │   └── sig_tool.py      # SIG (template pronto)
-│   │   └── data/                # PDFs e TXTs para ingestão
-│   ├── tests/
-│   │   ├── __init__.py
-│   │   └── test_mcp.py          # Testes do MCP
-│   ├── Dockerfile               # Container backend
-│   ├── requirements.txt          # Dependências Python
-│   ├── .env.example             # Template de env
-│   ├── TOOLS.md                 # 📚 Guia de ferramentas
-│   └── SIG_INTEGRATION.md        # 📚 Integração SIG
-│
-├── frontend/
-│   ├── src/                     # Código React
-│   ├── public/
-│   ├── Dockerfile               # Container nginx (prod)
-│   ├── Dockerfile.dev           # Dev com Vite
-│   ├── nginx.conf               # Config nginx
-│   └── package.json
-│
-├── docker-compose.yml           # Produção
-├── docker-compose.dev.yml       # Desenvolvimento
-├── .dockerignore                # Arquivos ignorados no build
-├── .env.docker.example          # Template .env para Docker
-├── SETUP_WINDOWS.md             # 📚 Setup no Windows/PowerShell
-├── DOCKER.md                    # 📚 Guia Docker & Compose
-├── README.md                    # Este arquivo
-└── .gitignore
+```text
+Usuario -> /api/query -> RAGService.retrieve() -> [MCPTool.call()] -> RAGService.generate() -> resposta JSON
 ```
 
----
+Durante o startup, o backend inicializa o servico de RAG e registra as ferramentas disponiveis no registry MCP. A decisao de acionar ferramenta e feita com base no conteudo da pergunta.
 
-## 🚀 Guias Rápidos
+## Componentes principais
 
-### 📍 Windows/PowerShell (Setup Local)
-Ver **[SETUP_WINDOWS.md](./SETUP_WINDOWS.md)**
-```powershell
+| Componente | Responsabilidade | Arquivo |
+|-----------|------------------|---------|
+| FastAPI | Inicializacao do servidor, rotas e CORS | [backend/app/main.py](backend/app/main.py) |
+| RAGService | Recuperacao de documentos e geracao com Gemini | [backend/app/ai_service.py](backend/app/ai_service.py) |
+| MCPTool | Registry e despacho de ferramentas | [backend/app/mcp_tools.py](backend/app/mcp_tools.py) |
+| BaseTool | Contrato base para ferramentas | [backend/app/tools/base_tool.py](backend/app/tools/base_tool.py) |
+| HTTPTool | Integracoes HTTP genericas | [backend/app/tools/http_tool.py](backend/app/tools/http_tool.py) |
+| SIGTool | Integracao com o portal SIG/dados abertos | [backend/app/tools/sig_tool.py](backend/app/tools/sig_tool.py) |
+| RUTool | Acesso a consultas relacionadas ao RU | [backend/app/tools/ru_tool.py](backend/app/tools/ru_tool.py) |
+| Ingestao | Processamento e indexacao de documentos | [backend/app/ingest.py](backend/app/ingest.py) |
+| Frontend | Interface React com Vite | [frontend/src/App.jsx](frontend/src/App.jsx) |
+
+## Requisitos
+
+- Python 3.11
+- Node.js 18
+- Docker e Docker Compose, se for usar containerizacao
+- Chave valida para Gemini em `GOOGLE_API_KEY`
+
+## Configuracao de ambiente
+
+O backend carrega variaveis do arquivo `.env` quando presente. As principais configuracoes sao:
+
+```bash
+GOOGLE_API_KEY=chave_gemini
+CHROMA_DIR=./chroma_db
+EMBEDDING_MODEL=all-MiniLM-L6-v2
+GEMINI_MODEL=gemini-flash-latest
+SIG_BASE_URL=https://dados.ufla.br
+SIG_API_KEY=
+SIG_USERNAME=
+SIG_PASSWORD=
+HTTP_TOOL_TIMEOUT=30
+LOG_LEVEL=INFO
+DEBUG=False
+```
+
+Endpoints publicos do SIG podem ser sobrescritos por variaveis como `SIG_RESOLUCOES_ENDPOINT`, `SIG_HORARIOS_ENDPOINT` e similares. Consulte [backend/app/config.py](backend/app/config.py) para a lista completa.
+
+## Execucao local
+
+### Backend
+
+```bash
 cd backend
-.\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 🐳 Docker (Produção)
-Ver **[DOCKER.md](./DOCKER.md)**
+Servico disponivel em `http://localhost:8000`.
+
+Documentacao interativa:
+
+- Swagger UI: `http://localhost:8000/docs`
+- OpenAPI: `http://localhost:8000/openapi.json`
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev -- --host 0.0.0.0 --port 5173
+```
+
+Para build de producao:
+
+```bash
+cd frontend
+npm run build
+```
+
+## Docker
+
+### Desenvolvimento
+
+```bash
+docker-compose -f docker-compose.dev.yml up --build
+```
+
+Portas expostas:
+
+- Backend: `8000`
+- Frontend: `5173`
+
+### Producao
+
 ```bash
 docker-compose up --build
 ```
 
-### 🔧 Ferramentas MCP
-Ver **[TOOLS.md](./backend/TOOLS.md)**
-```python
-mcp = MCPTool()
-mcp.register("sig", SIGTool())
-result = mcp.call("sig", {"endpoint": "resolucoes", "query": "473"})
-```
+Portas expostas:
 
-### 🏫 Integração SIG
-Ver **[SIG_INTEGRATION.md](./backend/SIG_INTEGRATION.md)**
+- Backend: `8000`
+- Frontend: `80`
 
----
+As definicoes completas estao em [DOCKER.md](./DOCKER.md).
 
-## 🎓 O que Cada Componente Faz
+## API
 
-| Componente | O Que Faz | Arquivo |
-|-----------|-----------|---------|
-| **RAGService** | Indexa docs, recupera similares, gera com Gemini | `app/ai_service.py` |
-| **MCPTool** | Registry de ferramentas | `app/mcp_tools.py` |
-| **BaseTool** | Classe abstrata para ferramentas | `app/tools/base_tool.py` |
-| **HTTPTool** | Requisições HTTP genéricas | `app/tools/http_tool.py` |
-| **SIGTool** | Template para integração SIG | `app/tools/sig_tool.py` |
-| **FastAPI** | API REST com endpoints | `app/main.py` |
-| **React** | Interface frontend | `frontend/src/` |
+### Saude e inventario
 
----
-
-## 🔌 Endpoints da API
-
-### Saúde e Info
 ```bash
 GET /health
-# {"status": "ok", "rag_initialized": true, ...}
-
 GET /tools
-# {"tools": {"sig": "Descrição", ...}, "total": 2}
 ```
 
-### Query RAG
+Resposta de `GET /health`:
+
+```json
+{
+  "status": "ok",
+  "rag_initialized": true,
+  "mcp_initialized": true,
+  "tools_available": ["sig", "http", "ru"]
+}
+```
+
+Resposta de `GET /tools`:
+
+```json
+{
+  "tools": {
+    "sig": "...",
+    "http": "...",
+    "ru": "..."
+  },
+  "total": 3
+}
+```
+
+### Consulta principal
+
 ```bash
 POST /api/query
-# Request:  {"query": "Qual é a resolução 473?", "use_tools": true}
-# Response: {"query": "...", "response": "...", "docs_found": 3, "tools_used": true}
 ```
 
-### Chamar Ferramenta (debug)
+Exemplo de payload:
+
+```json
+{
+  "query": "Qual e a resolucao 473?",
+  "use_tools": true
+}
+```
+
+Exemplo de resposta:
+
+```json
+{
+  "query": "Qual e a resolucao 473?",
+  "response": "...",
+  "docs_found": 3,
+  "tools_used": true
+}
+```
+
+### Chamada direta de ferramenta
+
 ```bash
 POST /api/tool/call
-# Request:  {"tool_name": "sig", "params": {"endpoint": "resolucoes", "query": "473"}}
-# Response: {"success": true, "tool": "sig", "data": {...}, "error": null}
 ```
 
-### Documentação Interativa
-```
-http://localhost:8000/docs (Swagger UI)
-```
+Este endpoint e util para depuracao e validacao manual de ferramentas MCP.
 
----
+## Ingestao de documentos
 
-## 🧪 Testes
+Arquivos PDF e TXT devem ser colocados em [backend/data](backend/data).
 
-### Rodar testes MCP
-```powershell
+Para reindexar o conteudo:
+
+```bash
 cd backend
-.\.venv\Scripts\Activate.ps1
+python -m app.ingest
+```
+
+Depois da ingestao, reinicie o backend para carregar o novo indice vetorial.
+
+## Ferramentas MCP
+
+As ferramentas registradas no startup do backend sao:
+
+- `sig`: consultas ao portal SIG/dados abertos da UFLA.
+- `http`: chamadas HTTP genericas para integracoes futuras.
+- `ru`: consultas relacionadas ao restaurante universitario.
+
+Para criar uma nova ferramenta:
+
+1. Estenda `BaseTool`.
+2. Implemente `call(self, params) -> dict`.
+3. Registre a ferramenta em [backend/app/main.py](backend/app/main.py) durante o startup.
+4. Atualize [backend/app/tools/__init__.py](backend/app/tools/__init__.py) se necessario.
+
+Detalhes adicionais estao em [backend/TOOLS.md](backend/TOOLS.md).
+
+## Testes
+
+### Backend
+
+```bash
+cd backend
 pip install pytest
 pytest tests/test_mcp.py -v
 ```
 
-### Teste manual via HTTP
+### Verificacao manual
+
 ```bash
 curl http://localhost:8000/health
-curl -X POST http://localhost:8000/api/query \
-  -H 'Content-Type: application/json' \
-  -d '{"query":"resolução"}'
+curl http://localhost:8000/tools
 ```
 
----
+## Estrutura do repositorio
 
-## 🔐 Configuração
-
-### Variáveis de Ambiente
-
-```bash
-# .env
-
-# Obrigatório para geração com Gemini
-GOOGLE_API_KEY=sua_chave_aqui
-
-# ChromaDB (persistência de vetores)
-CHROMA_DIR=./chroma_db
-
-# SIG (preenchher quando tiver documentação)
-SIG_BASE_URL=https://sig.ufla.br
-SIG_API_KEY=
-
-# Debug
-LOG_LEVEL=INFO
+```text
+.
+|-- backend/
+|   |-- app/
+|   |-- data/
+|   |-- tests/
+|   |-- Dockerfile
+|   |-- requirements.txt
+|   |-- TOOLS.md
+|   `-- SIG_INTEGRATION.md
+|-- frontend/
+|   |-- src/
+|   |-- public/
+|   |-- Dockerfile
+|   |-- Dockerfile.dev
+|   |-- nginx.conf
+|   `-- package.json
+|-- docker-compose.yml
+|-- docker-compose.dev.yml
+|-- DOCKER.md
+|-- SETUP_WINDOWS.md
+`-- README.md
 ```
 
-**Nunca comite `.env`** — está em `.gitignore`.
-
----
-
-## 📊 Fluxo de Dados
-
-```
-┌─────────────────┐
-│  Query Usuario  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────────┐
-│   RAGService.retrieve   │  ◄─── ChromaDB (vetores)
-│  (busca por similaridade)│
-└────────┬────────────────┘
-         │
-         ▼
-┌──────────────────────┐
-│   MCPTool.call()     │  ◄─── SIG, APIs externas
-│  (ferramentas)       │
-└────────┬─────────────┘
-         │
-         ▼
-┌──────────────────────────────┐
-│ RAGService.generate()        │  ◄─── Gemini API
-│ (docs + tool_results + LLM)  │
-└────────┬─────────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Resposta JSON  │
-└─────────────────┘
-```
-
----
-
-## 🔄 Adicionar Novos Documentos
-
-1. Coloque `.pdf` ou `.txt` em `backend/data/`
-2. Execute:
-   ```powershell
-   cd backend
-   python -m app.ingest
-   ```
-3. Reinicie o servidor
-
----
-
-## 📝 Criar Nova Ferramenta MCP
-
-1. Estenda `BaseTool` em `backend/app/tools/nova_tool.py`
-2. Implemente `call(self, params) -> dict`
-3. Importe em `tools/__init__.py`
-4. Registre em `main.py` no `startup_event()`
-
-Exemplo completo em **[TOOLS.md](./backend/TOOLS.md)**.
-
----
-
-## 🐳 Deploy com Docker
-
-**Desenvolvimento (hot reload):**
-```bash
-docker-compose -f docker-compose.dev.yml up
-```
-
-**Produção:**
-```bash
-docker-compose up --build
-```
-
-Ver **[DOCKER.md](./DOCKER.md)** para detalhes.
-
----
-
-## 🛠️ Stack Tecnológico
+## Tecnologias
 
 ### Backend
-- **FastAPI** — API REST
-- **ChromaDB** — Vector store
-- **Sentence-Transformers** — Embeddings
-- **Gemini API** — LLM para geração
-- **httpx** — Cliente HTTP
-- **python-dotenv** — Config com .env
+
+- FastAPI
+- ChromaDB
+- Sentence-Transformers
+- Gemini API
+- httpx
+- python-dotenv
 
 ### Frontend
-- **React 18** — UI
-- **Vite 4** — Build tool
-- **Framer Motion** — Animações
 
-### DevOps
-- **Docker** — Containerização
-- **Docker Compose** — Orquestração local
-- **Nginx** — Web server + proxy
+- React 18
+- Vite
+- Framer Motion
+- react-markdown
+- remark-gfm
+
+### Infraestrutura
+
+- Docker
+- Docker Compose
+- Nginx
 
 ### Testes
-- **pytest** — Framework de testes
 
----
+- pytest
 
-## 🚨 Troubleshooting
+## Solucao de problemas
 
-### ❌ "GOOGLE_API_KEY não definida"
-```bash
-# Preencher .env
-GOOGLE_API_KEY=sua_chave_do_gemini
-```
+### `GOOGLE_API_KEY` ausente
 
-### ❌ "ChromaDB não encontrado"
-```powershell
-# Verificar volume Docker ou diretório local
-$env:CHROMA_DIR = (Resolve-Path .).Path + "\chroma_db"
-```
+Defina a variavel no arquivo `.env` antes de iniciar o backend.
 
-### ❌ "Porta 8000 em uso"
-```bash
-# Usar porta diferente
-uvicorn app.main:app --reload --port 8001
-```
+### Erro de caminho do ChromaDB
 
-### ❌ "Frontend não conecta ao Backend"
-```bash
-# Verificar VITE_API_URL em frontend
-# Tester: curl http://localhost:8000/health
-```
+Verifique se `CHROMA_DIR` aponta para um diretorio existente e gravavel.
 
----
+### Porta 8000 ou 5173 ocupada
 
-## 📚 Documentação Completa
+Altere a porta no comando de inicializacao ou encerre o processo que esta usando a porta.
 
-1. **[SETUP_WINDOWS.md](./SETUP_WINDOWS.md)** — Setup local no Windows
-2. **[DOCKER.md](./DOCKER.md)** — Containerização e deploy
-3. **[TOOLS.md](./backend/TOOLS.md)** — Framework MCP e ferramentas
-4. **[SIG_INTEGRATION.md](./backend/SIG_INTEGRATION.md)** — Integração SIG
+### Frontend nao acessa o backend
 
----
+Confirme se o backend esta ativo em `http://localhost:8000` e se o frontend foi iniciado com a URL correta da API.
 
-## 🎯 Próximos Passos
+## Documentacao complementar
 
-### Curto Prazo
-- [ ] Implementar SIG quando tiver documentação
-- [ ] Adicionar autenticação (JWT, OAuth)
-- [ ] Implementar rate limiting
-- [ ] Cachear respostas do SIG
+1. [SETUP_WINDOWS.md](./SETUP_WINDOWS.md) - execucao local no Windows.
+2. [DOCKER.md](./DOCKER.md) - ambiente com Docker e Docker Compose.
+3. [backend/TOOLS.md](./backend/TOOLS.md) - especificacao do framework MCP.
+4. [backend/SIG_INTEGRATION.md](./backend/SIG_INTEGRATION.md) - integracao com SIG.
 
-### Médio Prazo
-- [ ] Integração com mais ferramentas
-- [ ] Historico de conversas
-- [ ] Upload de documentos via UI
-- [ ] Monitoramento e logging centralizado
+## Contribuicao
 
-### Longo Prazo
-- [ ] Deploy em produção (AWS, GCP, Azure)
-- [ ] Kubernetes para escalabilidade
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Analytics de uso
+Fluxo recomendado:
 
----
+1. Criar uma branch de trabalho.
+2. Implementar a mudanca.
+3. Executar os testes relevantes.
+4. Revisar o diff.
+5. Abrir um pull request.
 
-## 📊 Estatísticas do Projeto
+## Licenca
 
-- **Arquivos Python**: 9
-- **Arquivos de Documentação**: 7
-- **Testes**: 20+ casos
-- **Endpoints da API**: 4 (+ 1 debug)
-- **Ferramentas MCP**: 3 (BaseTool + HTTPTool + SIGTool)
-- **Linhas de Código**: ~2000
-- **Linhas de Documentação**: ~5000
-
----
-
-## 🤝 Contribuindo
-
-1. Criar branch: `git checkout -b feature/nova-ferramenta`
-2. Fazer alterações
-3. Testes: `pytest tests/`
-4. Commit: `git commit -am "Add nova ferramenta"`
-5. Push: `git push origin feature/nova-ferramenta`
-6. PR no GitHub
-
----
-
-## 📞 Suporte
-
-- **Issues**: Abrir issue no GitHub
-- **Logs**: `docker-compose logs -f` ou `$env:LOG_LEVEL = "DEBUG"`
-- **Testes**: `pytest -v`
-- **Docs**: Ver arquivos `.md` no repo
-
----
-
-## 📜 Licença
-
-Este projeto é parte da disciplina "Sistemas Distribuídos" — UFLA 2026.
-
----
-
-## 👏 Créditos
-
-- **Alunos**: Douglas Alves, Pedro Castro e João Amâncio Gherardi
-- **Instituição**: UFLA (Universidade Federal de Lavras)
-- **Semestre**: 8º
-- **Disciplina**: Sistemas Distribuídos
-- **Tecnologias**: Python, React, Docker, LLMs
-
----
-
-**Pronto para começar? Execute os passos em [SETUP_WINDOWS.md](./SETUP_WINDOWS.md)!** 🚀
+Projeto desenvolvido para a disciplina de Sistemas Distribuidos na UFLA.
