@@ -27,7 +27,6 @@ Frontend exibe resposta formatada
 | Frontend | Captura pergunta, exibe resposta | Backend /api/query |
 | RAGService | Busca documentos por similaridade | ChromaDB, Gemini |
 | MCPTool | Registry e roteia chamadas de ferramentas | SIGTool, RUTool, HTTPTool |
-| SIGTool | Dados publicos UFLA | Portal Dados Abertos (ou SIG) |
 | RUTool | Cardapio e saldo RU | APIs UFLA |
 | HTTPTool | Chamadas HTTP genericas | APIs externas |
 | ChromaDB | Vetores de documentos | RAGService |
