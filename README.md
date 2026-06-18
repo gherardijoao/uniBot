@@ -381,13 +381,13 @@ uvicorn app.main:app --reload --port 8001
 
 ## 📜 Licença
 
-Este projeto é parte da disciplina "Sistemas Distribuídos" — UFLA 2024.
+Este projeto é parte da disciplina "Sistemas Distribuídos" — UFLA 2026.
 
 ---
 
 ## 👏 Créditos
 
-- **Aluno**: Douglas
+- **Alunos**: Douglas Alves, Pedro Castro e João Amâncio Gherardi
 - **Instituição**: UFLA (Universidade Federal de Lavras)
 - **Semestre**: 8º
 - **Disciplina**: Sistemas Distribuídos
